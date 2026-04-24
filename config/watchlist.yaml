@@ -1,0 +1,13 @@
+# Phase 1 watchlist — 10 liquid large-caps per EXECUTION_PLAN.md.
+# Expansion to 20/50 is Phase 7. Do not add symbols speculatively.
+symbols:
+  - SPY
+  - QQQ
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - META
+  - GOOGL
+  - TSLA
+  - AMD

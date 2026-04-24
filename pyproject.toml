@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trading-agent"
+version = "0.0.0"
+description = "Paper-first AI trading agent (Alpaca + Claude Haiku 4.5 judgment)."
+requires-python = ">=3.11"
+readme = "docs/ARCHITECTURE.md"
+
+dependencies = [
+    "alpaca-py>=0.30",
+    "anthropic>=0.40",
+    "pandas>=2.1",
+    # pandas-ta was delisted from PyPI; pandas-ta-classic is the API-compatible community fork.
+    # Imported as `pandas_ta` at the module level (same public surface).
+    "pandas-ta-classic>=0.4.47",
+    "pandas_market_calendars>=4.4",
+    "structlog>=24.1",
+    "python-dotenv>=1.0",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "jinja2>=3.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.4",
+]
+
+[tool.setuptools]
+# Imports are wired via sys.path (tests/conftest.py + src/_bootstrap.py); no auto package discovery.
+packages = []
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+# Do not descend into the submodule's own test suite when collecting.
+norecursedirs = ["lib", "data", "logs", ".venv", "venv", "build", "dist"]
+addopts = "--ignore=lib"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]

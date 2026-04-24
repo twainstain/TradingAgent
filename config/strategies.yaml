@@ -1,0 +1,16 @@
+# Strategy registry. Phase-2-ready; Phase 4 will read `stop_pct` / `take_profit_pct`.
+# Defaults are calibrated, not speculative — do not tune without a CHANGELOG entry.
+strategies:
+  mean_reversion:
+    enabled: true
+    rsi_threshold: 30.0
+    volume_multiple: 1.5
+    # Phase 4 execution overrides (unused in Phase 2)
+    stop_pct: -0.02
+    take_profit_pct: 0.04
+  momentum:
+    enabled: true
+    rsi_low: 50.0
+    rsi_high: 70.0
+    stop_pct: -0.02
+    take_profit_pct: 0.04

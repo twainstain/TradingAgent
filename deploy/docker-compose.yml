@@ -1,0 +1,38 @@
+# Run from repo root:  docker compose -f deploy/docker-compose.yml up
+#
+# Two services share the same image build. Paths are resolved relative to this
+# compose file, so ../data and ../logs refer to <repo-root>/data and /logs.
+
+services:
+  agent:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: trading-agent:latest
+    env_file: ../.env
+    volumes:
+      - ../data:/app/data
+      - ../logs:/app/logs
+    restart: on-failure
+    command: ["python", "-m", "orchestrator.main"]
+
+  dashboard:
+    image: trading-agent:latest
+    depends_on:
+      - agent
+    env_file: ../.env
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ../data:/app/data:ro
+      - ../logs:/app/logs:ro
+    restart: on-failure
+    command:
+      [
+        "uvicorn",
+        "dashboard.app:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+      ]
