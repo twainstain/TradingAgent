@@ -57,9 +57,33 @@ def load_enabled_strategies(path: str | Path | None = None) -> list[Strategy]:
     return out
 
 
+# ----- Phase 4: execution overrides from the same config -----
+
+DEFAULT_STOP_PCT = -0.02
+DEFAULT_TAKE_PROFIT_PCT = 0.04
+
+
+def execution_overrides(
+    strategy_name: str, path: str | Path | None = None
+) -> tuple[float, float]:
+    """Return (stop_pct, take_profit_pct) for `strategy_name`.
+
+    Falls back to the -2% / +4% defaults (ARCHITECTURE §3.4) if the
+    strategy is missing or the config key is absent.
+    """
+    cfg = load_strategies_config(path)
+    params = cfg.get(strategy_name) or {}
+    stop = float(params.get("stop_pct", DEFAULT_STOP_PCT))
+    tp = float(params.get("take_profit_pct", DEFAULT_TAKE_PROFIT_PCT))
+    return stop, tp
+
+
 __all__ = [
     "Strategy",
     "StrategyContext",
     "load_enabled_strategies",
     "load_strategies_config",
+    "execution_overrides",
+    "DEFAULT_STOP_PCT",
+    "DEFAULT_TAKE_PROFIT_PCT",
 ]

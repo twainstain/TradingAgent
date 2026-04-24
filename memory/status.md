@@ -3,7 +3,7 @@
 Mirror of `docs/EXECUTION_PLAN.md` checkboxes. Update this file as work progresses; commit alongside the code that ticks a box. The plan is the spec; this file is the state.
 
 **Last updated:** 2026-04-23
-**Current phase:** Phase 3 (code + 27 risk unit tests landed; manual KILL/halt drills still to run; eyeball-review of replay.py still pending live bars)
+**Current phase:** Phase 4 (code + 12 execution unit tests landed; manual "bracket visible in Alpaca UI" drill still to run)
 **Module layout:** package layout — `src/{core,market,strategies,llm,risk_rules,execution,orchestrator,storage,dashboard}`. Do not shadow platform top-level names (`pipeline`, `risk`, `alerting`, `observability`, `persistence`).
 
 ---
@@ -119,15 +119,22 @@ Mirror of `docs/EXECUTION_PLAN.md` checkboxes. Update this file as work progress
 ## Phase 4 — Execution agent
 
 **Deliverables**
-- [ ] `src/execution/agent.py` (bracket orders)
-- [ ] Stop −2%, TP +4% (per-strategy override)
-- [ ] Idempotent `client_order_id = {tick_id}:{symbol}`
-- [ ] Fill tracking via `/v2/orders` polling → `fills` table
-- [ ] Rejection logging + alert, no auto-retry
+- [x] `src/execution/agent.py` — `ExecutionAgent` submits `OrderClass.BRACKET` via alpaca-py; entry + stop + TP in ONE atomic request (no naked entries, invariant #8)
+- [x] Stop −2%, TP +4% defaults with per-strategy override via `strategies.execution_overrides(name)` reading `config/strategies.yaml`
+- [x] Idempotent `client_order_id = "{tick_id}:{symbol}"` — `ExecutionAgent.submit` checks DB for the id, skips if present; broker-side dedup is the safety net
+- [x] `src/execution/fill_poller.py` — per-tick poll of `get_order_by_client_id` for every non-terminal order; upserts `fills`; updates `orders.status`; optional alert hook fires on `filled`
+- [x] `src/storage/order_repo.py` + `src/storage/fill_repo.py` (append-only fill timeline, dedup on unchanged (status, qty))
+- [x] Rejection path — broker exception → `insert_order(status='rejected', raw_response=…)` + alert_hook(`broker_rejection`); **no automatic retry**; next submit for same id returns `idempotent_dedup`
 
 **Exit criteria**
-- [ ] Manual paper: tiny signal → bracket visible in Alpaca UI with stop + TP
-- [ ] `tests/test_execution.py` passes
+- [ ] Manual paper: tiny signal → bracket visible in Alpaca UI with stop + TP   <!-- code path fully tested; to run end-to-end, wire orchestrator (Phase 5) or `scripts/` one-shot -->
+- [x] `tests/test_execution.py` passes — **12 tests**: bracket prices (defaults + 2dp rounding + strategy override from yaml), happy-path submit (order row carries stop+TP+type='bracket'), bracket request object carries BOTH legs, idempotent dedup hits DB not broker, client_order_id format, **rejection persisted + alert fired + second submit dedups = no retry**, not-approved + zero-qty skip paths, fill poller (partial→filled transitions, unchanged-state dedup, skip-terminal)
+
+**Phase 4 notes**
+- Rejection → dedup semantics: a rejected row STILL populates the idempotency key. That means a legit broker rejection (insufficient BP, halted, PDT) isn't silently retried next tick — operator must intervene. This is what the plan wants (invariant: no silent retries).
+- Fill poller is append-only so the `fills` table becomes a state-transition log; the latest row is `ORDER BY id DESC LIMIT 1`. Good for audit, bad for naïve SELECTs — Phase 5 daily summary should use windowed aggregation.
+- `alert_hook` on ExecutionAgent / fill_poller is a plain callable for now; Phase 5 substitutes `trading_platform.alerting.AlertDispatcher`.
+- Full suite: **87 passed**.
 
 ---
 
