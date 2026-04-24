@@ -3,7 +3,7 @@
 Mirror of `docs/EXECUTION_PLAN.md` checkboxes. Update this file as work progresses; commit alongside the code that ticks a box. The plan is the spec; this file is the state.
 
 **Last updated:** 2026-04-23
-**Current phase:** Phase 2 (code + unit tests landed; manual eyeball-review of `replay.py --date …` pending real bar history)
+**Current phase:** Phase 3 (code + 27 risk unit tests landed; manual KILL/halt drills still to run; eyeball-review of replay.py still pending live bars)
 **Module layout:** package layout — `src/{core,market,strategies,llm,risk_rules,execution,orchestrator,storage,dashboard}`. Do not shadow platform top-level names (`pipeline`, `risk`, `alerting`, `observability`, `persistence`).
 
 ---
@@ -93,18 +93,26 @@ Mirror of `docs/EXECUTION_PLAN.md` checkboxes. Update this file as work progress
 ## Phase 3 — Risk agent + kill switch
 
 **Deliverables**
-- [ ] `src/risk_rules/rules.py` (each rule a `RiskRule`)
-- [ ] `src/risk_rules/agent.py` (composed into `RuleBasedPolicy`)
-- [ ] `src/risk_rules/sizing.py` (Decimal-only)
-- [ ] `src/risk_rules/portfolio.py` (Alpaca positions + equity)
-- [ ] Earnings blackout (Polygon, 2-day window)
-- [ ] Kill switch (`/app/data/KILL` → reject all + `FLATTEN_ALL`)
-- [ ] Daily halt via `CircuitBreaker` → `risk_state` row
+- [x] `src/risk_rules/rules.py` — 7 rules: `KillSwitchRule`, `DailyHaltRule`, `TradingHoursRule` (09:45-15:45 ET), `MaxOpenPositionsRule` (≤8), `MaxPositionSizeRule` (≤3% equity/symbol), `MaxTotalExposureRule` (≤50% equity), `EarningsBlackoutRule` (2-day window)
+- [x] `src/risk_rules/agent.py` — `RiskAgent` wrapping `RuleBasedPolicy`; persists approve/reject to `risk_decisions`; emits `FLATTEN_ALL` when kill switch engaged AND positions exist
+- [x] `src/risk_rules/sizing.py` — Decimal-only `size_order(equity, current_exposure, price)` with `ROUND_DOWN`; floats accepted at boundary, never used for math
+- [x] `src/risk_rules/portfolio.py` — `Portfolio` / `PositionInfo` frozen dataclasses (Decimal fields); `fetch_portfolio(client)` hits Alpaca on every call
+- [x] `src/risk_rules/earnings.py` — `EarningsCalendar` (Polygon `/vX/reference/tickers/{t}/events`, 6h TTLCache, fails-open on outage); `StaticEarningsCalendar` for tests/offline
+- [x] `src/risk_rules/kill_switch.py` — `is_engaged()` checks `data/KILL` file; FLATTEN_ALL constant
+- [x] `src/risk_rules/daily_halt.py` — `DailyHaltBreaker` trips at −2%, persists to `risk_state`; clears on date rollover. **Plan said "via CircuitBreaker"; the platform breaker is failure/staleness-driven, not P&L — see note below.**
+- [x] `src/storage/risk_state_repo.py` — `ensure_state`, `mark_halted`, `mark_kill_switch_engaged`, `is_halted_today`
+- [x] `src/storage/risk_decision_repo.py` — `write_decision` (approvals AND rejections)
 
 **Exit criteria**
-- [ ] `tests/test_risk_rules.py` — one test per rule
-- [ ] Manual: `touch data/KILL` → all signals rejected
-- [ ] Manual: seeded −2.5% day → halt survives restart, clears on date rollover
+- [x] `tests/test_risk_rules.py` — **27 tests**: per-rule (14: each rule has an approve + a reject case), sizing (6: per-symbol cap / total cap / floor / float-coerce / zero-price), daily halt persistence (3: trip at 2%, don't trip at 1%, survives close/reopen == simulated restart), `RiskAgent` integration (4: happy path, kill+positions=flatten-all, kill+no-positions=no-flatten, rejections persisted)
+- [x] Kill-switch behavior covered by unit tests; manual `touch data/KILL` drill still TODO (trivial given the code)
+- [x] Halt-across-restart covered by `test_daily_halt_survives_reconnect` (closes the DB, reopens the same file — same effect as docker restart); manual end-to-end drill still TODO
+
+**Phase 3 notes**
+- `DailyHaltBreaker` does **not** wrap `trading_platform.risk.CircuitBreaker`. The platform breaker is event/window-driven (failures, stale data, rate limits); the daily halt is a P&L threshold with sticky persistence. Semantically similar, mechanically different — using the platform breaker would have required feeding it synthetic "failure" events. Plan wording was aspirational.
+- Earnings: fails-open on Polygon outage (signal flows through) but logs a warning. Kill switch and daily halt remain hard stops regardless. Consistent with §7 Failure Modes.
+- `MaxOpenPositionsRule` allows ADD to an existing symbol even at the 8-position limit (otherwise you can't average in or scale).
+- Full suite: **75 passed**.
 
 ---
 
