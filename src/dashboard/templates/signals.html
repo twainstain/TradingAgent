@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Signals</h1>
+
+<form method="get" class="card">
+  <div style="display:flex; gap:16px; flex-wrap: wrap;">
+    <label>Date <input type="date" name="date" value="{{ filters.date }}"></label>
+    <label>Symbol <input type="text" name="symbol" value="{{ filters.symbol or '' }}" placeholder="AAPL"></label>
+    <label>Strategy
+      <select name="strategy">
+        <option value="">all</option>
+        <option value="mean_reversion" {{ 'selected' if filters.strategy == 'mean_reversion' else '' }}>mean_reversion</option>
+        <option value="momentum" {{ 'selected' if filters.strategy == 'momentum' else '' }}>momentum</option>
+      </select>
+    </label>
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </div>
+</form>
+
+<div class="card">
+  <h2>{{ signals|length }} signal{{ 's' if signals|length != 1 else '' }}</h2>
+  {% if not signals %}
+    <p class="muted">No signals match.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Created</th><th>Symbol</th><th>Strategy</th><th>Side</th>
+        <th>Branch</th><th>Risk</th><th>Order</th><th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in signals %}
+      <tr>
+        <td>{{ s.created_at }}</td>
+        <td>{{ s.symbol }}</td>
+        <td>{{ s.strategy }}</td>
+        <td>{{ s.side }}</td>
+        <td>
+          {% if s.llm_branch == 'llm_approved' %}
+            <span class="badge badge-llm-ok">llm_approved</span>
+          {% elif s.llm_branch == 'llm_rejected' %}
+            <span class="badge badge-llm-no">llm_rejected</span>
+          {% else %}
+            <span class="badge badge-rule">rule_only</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if s.risk_approved is none %}
+            <span class="muted">—</span>
+          {% elif s.risk_approved %}
+            <span class="pos">approved</span>
+            <span class="muted">· qty={{ s.risk_qty }}</span>
+          {% else %}
+            <span class="neg">rejected</span>
+            <span class="muted">· {{ s.risk_reason }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if s.client_order_id %}
+            <span class="muted">{{ s.client_order_id }}</span><br>
+            <span class="muted">{{ s.order_status }}</span>
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
+        <td class="muted">{{ s.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

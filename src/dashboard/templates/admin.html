@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Admin</h1>
+
+<div class="card">
+  <h2>Risk state</h2>
+  {% if not states %}
+    <p class="muted">No risk_state rows.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Halted</th><th>Reason</th><th>Engaged at</th>
+        <th class="num">Start eq</th><th class="num">PnL</th><th>Kill</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in states %}
+      <tr>
+        <td>{{ s.trading_date }}</td>
+        <td>{{ 'yes' if s.halted else 'no' }}</td>
+        <td>{{ s.reason or '—' }}</td>
+        <td>{{ s.engaged_at or '—' }}</td>
+        <td class="num">{{ '%.2f'|format(s.starting_equity) if s.starting_equity is not none else '—' }}</td>
+        <td class="num {{ 'neg' if s.current_pnl is not none and s.current_pnl < 0 else '' }}">
+          {{ '%.2f'|format(s.current_pnl) if s.current_pnl is not none else '—' }}
+        </td>
+        <td>{{ 'yes' if s.kill_switch_engaged else 'no' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Kill switch</h2>
+  <p>
+    Current status:
+    {% if kill_switch_engaged %}
+      <span class="badge badge-kill">engaged</span>
+      <span class="muted">(file <code>data/KILL</code> present)</span>
+    {% else %}
+      <span class="badge badge-clear">not engaged</span>
+    {% endif %}
+  </p>
+
+  {% if kill_switch_engaged %}
+    <p class="muted">To clear the kill switch, remove the <code>data/KILL</code> file manually
+       (there is no clear-from-dashboard button by design).</p>
+  {% else %}
+    <div class="admin-warn">
+      <h3 style="margin-top:0">Engage kill switch</h3>
+      <p>Creates <code>data/KILL</code>. All subsequent signals reject; if positions exist, the orchestrator emits <code>FLATTEN_ALL</code>. <b>This is the only write path in this dashboard.</b></p>
+      <form method="post" action="/admin/kill-switch/engage" onsubmit="return confirm('Engage kill switch? This rejects all new signals.');">
+        <label>
+          Type <b>ENGAGE</b> to confirm:
+          <input type="text" name="confirm" autocomplete="off" required>
+        </label>
+        <button type="submit" class="btn btn-danger">Engage</button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

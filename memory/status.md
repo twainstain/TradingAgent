@@ -3,7 +3,7 @@
 Mirror of `docs/EXECUTION_PLAN.md` checkboxes. Update this file as work progresses; commit alongside the code that ticks a box. The plan is the spec; this file is the state.
 
 **Last updated:** 2026-04-23
-**Current phase:** Phase 5 (orchestrator + LLM judge + structlog + alerts + daily summary landed; one full market day end-to-end is the last exit criterion)
+**Current phase:** Phase 5b (dashboard landed; manual "Today view matches Alpaca UI" pending live paper session)
 **Module layout:** package layout — `src/{core,market,strategies,llm,risk_rules,execution,orchestrator,storage,dashboard}`. Do not shadow platform top-level names (`pipeline`, `risk`, `alerting`, `observability`, `persistence`).
 
 ---
@@ -172,16 +172,23 @@ Mirror of `docs/EXECUTION_PLAN.md` checkboxes. Update this file as work progress
 ## Phase 5b — Dashboard
 
 **Deliverables**
-- [ ] `src/dashboard/` FastAPI app, SQLite read-only
-- [ ] Views: Today, Signals, Latency, Daily summary, Admin
-- [ ] Styling per `DESIGN.md`
-- [ ] `deploy/docker-compose.yml` binds dashboard to `127.0.0.1:8000`
-- [ ] Admin kill-switch button (only dashboard write path)
+- [x] `src/dashboard/` FastAPI app + Jinja templates + static CSS; `open_readonly(db_path)` uses `sqlite:///…?mode=ro` URI form
+- [x] Views: Today (halt/kill status + fills + open orders), Signals (date/symbol/strategy filter + risk + order trace), Latency (p50/p95 per stage from `latency.jsonl`), Daily summary (renders the markdown file), Admin (risk_state table + kill-switch confirm form)
+- [x] Styling per `DESIGN.md` — `--rui-*` tokens (teal / danger / blue), 9999px pill buttons, zero shadows, Aeonik Pro display + Inter body, near-black/white base
+- [x] `deploy/docker-compose.yml` binds dashboard to `127.0.0.1:8000` (already done in Phase 0)
+- [x] Admin kill-switch button — POST `/admin/kill-switch/engage` creates `data/KILL`. Requires `confirm=ENGAGE` form field; refuses non-loopback origins with 403. **Only write path in this dashboard.**
+- [x] Added `python-multipart` to runtime deps (form POSTs require it)
 
 **Exit criteria**
-- [ ] `tests/test_dashboard.py` passes (read-only DB, localhost-only kill switch)
-- [ ] Manual: Today view matches Alpaca UI; Latency view matches `analyze_latency`
-- [ ] Killing dashboard process doesn't affect agent
+- [x] `tests/test_dashboard.py` passes — **11 tests**: /health, today/signals/latency/daily/admin render with seed data, signals date filter, 400 on bad date, RO DB write raises (INSERT + DELETE), kill-switch engage from loopback succeeds (303), missing `confirm=ENGAGE` → 400, non-loopback origin → 403
+- [ ] Manual: Today view matches Alpaca UI; Latency view matches `analyze_latency`   <!-- requires live paper run -->
+- [x] Killing dashboard process doesn't affect agent — separate service in `docker-compose.yml`; dashboard container has no broker creds in its env (same .env but no code reads them from the dashboard process); DB is RO so the dashboard can't wedge the WAL
+
+**Phase 5b notes**
+- The Today view uses the UTC date for "today" (simpler; dashboard is informational). A mid-ET-day reload during pre-open hours will show yesterday's trading_date in risk_state which is fine.
+- Daily summary view shows raw markdown inside `<pre>` — keeps rendering deterministic and avoids adding a markdown parser dep. If we later want HTML-rendered headings, swap to `markdown-it-py`.
+- Clearing the kill switch is deliberately NOT a dashboard action — requires removing `data/KILL` from the host. The operator keeps a physical step before trading resumes.
+- Full suite: **120 passed**.
 
 ---
 

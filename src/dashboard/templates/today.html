@@ -1,0 +1,88 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Today · {{ trading_date }}</h1>
+
+<div class="card">
+  <h2>Status</h2>
+  <dl class="kv">
+    <dt>Halt</dt>
+    <dd>
+      {% if risk_state and risk_state.halted %}
+        <span class="badge badge-halt">halted</span>
+        <span class="muted">&middot; {{ risk_state.reason }} @ {{ risk_state.engaged_at }}</span>
+      {% else %}
+        <span class="badge badge-ok">clear</span>
+      {% endif %}
+    </dd>
+    <dt>Kill switch</dt>
+    <dd>
+      {% if kill_switch_engaged %}
+        <span class="badge badge-kill">engaged</span>
+      {% else %}
+        <span class="badge badge-clear">not engaged</span>
+      {% endif %}
+    </dd>
+    <dt>Starting equity</dt>
+    <dd>{{ '${:,.2f}'.format(risk_state.starting_equity) if risk_state and risk_state.starting_equity else '—' }}</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <h2>Today's fills ({{ fills|length }})</h2>
+  {% if not fills %}
+    <p class="muted">No fills yet.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th><th>Symbol</th><th>Side</th>
+        <th class="num">Qty</th><th class="num">Avg price</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fills %}
+      <tr>
+        <td>{{ f.reported_at }}</td>
+        <td>{{ f.symbol }}</td>
+        <td>{{ f.side }}</td>
+        <td class="num">{{ f.filled_qty }}</td>
+        <td class="num">{{ '%.2f'|format(f.filled_avg_price) if f.filled_avg_price is not none else '—' }}</td>
+        <td>{{ f.status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Open orders (non-terminal)</h2>
+  {% if not open_orders %}
+    <p class="muted">No non-terminal orders.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Submitted</th><th>Symbol</th><th>Side</th>
+        <th class="num">Qty</th><th class="num">Entry≈</th>
+        <th class="num">Stop</th><th class="num">TP</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in open_orders %}
+      <tr>
+        <td>{{ o.submitted_at }}</td>
+        <td>{{ o.symbol }}</td>
+        <td>{{ o.side }}</td>
+        <td class="num">{{ o.qty }}</td>
+        <td class="num">{{ '%.2f'|format(o.entry_price) if o.entry_price is not none else '—' }}</td>
+        <td class="num">{{ '%.2f'|format(o.stop_price) if o.stop_price is not none else '—' }}</td>
+        <td class="num">{{ '%.2f'|format(o.take_profit_price) if o.take_profit_price is not none else '—' }}</td>
+        <td>{{ o.status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

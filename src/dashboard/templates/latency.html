@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Latency · {{ trading_date }}</h1>
+
+<div class="card">
+  <h2>Per-stage p50 / p95 (ms)</h2>
+  {% if not stages %}
+    <p class="muted">No latency records for this date in <code>logs/latency.jsonl</code>.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Stage</th><th class="num">n</th>
+        <th class="num">p50</th><th class="num">p95</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name, qs in stages.items() %}
+      <tr>
+        <td><code>{{ name }}</code></td>
+        <td class="num">{{ qs.n }}</td>
+        <td class="num">{{ '%.1f'|format(qs.p50) }}</td>
+        <td class="num {{ 'neg' if qs.p95 > 3000 else '' }}">{{ '%.1f'|format(qs.p95) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">Phase 6 target: no stage &gt; 3000 ms for ≥99% of ticks.</p>
+  {% endif %}
+</div>
+{% endblock %}

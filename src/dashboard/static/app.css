@@ -1,0 +1,174 @@
+/* Dashboard CSS — per DESIGN.md. Minimal, flat, no shadows. */
+
+:root {
+  --rui-dark: #191c1f;
+  --rui-light: #ffffff;
+  --rui-surface: #f4f4f4;
+  --rui-blue: #494fdf;
+  --rui-danger: #e23b4a;
+  --rui-warning: #ec7e00;
+  --rui-teal: #00a87e;
+  --rui-mid-slate: #505a63;
+  --rui-cool-gray: #8d969e;
+  --rui-border: #c9c9cd;
+
+  --font-display: "Aeonik Pro", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--rui-light);
+  color: var(--rui-dark);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.16px;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--rui-dark);
+  margin: 0 0 16px 0;
+}
+
+h1 { font-size: 48px; line-height: 1.2; letter-spacing: -0.48px; }
+h2 { font-size: 32px; line-height: 1.19; letter-spacing: -0.32px; margin-top: 32px; }
+h3 { font-size: 20px; line-height: 1.4; }
+
+a { color: var(--rui-blue); text-decoration: none; }
+a:hover { opacity: 0.85; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 80px 24px;
+}
+
+/* Navigation */
+nav.top {
+  background: var(--rui-dark);
+  color: var(--rui-light);
+  padding: 14px 24px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+nav.top .brand {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+nav.top a {
+  color: var(--rui-light);
+  font-size: 16px;
+  letter-spacing: 0.16px;
+  padding: 6px 0;
+}
+nav.top a.active { border-bottom: 2px solid var(--rui-light); }
+
+/* Cards */
+.card {
+  background: var(--rui-surface);
+  border-radius: 20px;
+  padding: 24px;
+  margin: 16px 0;
+}
+.card h2 { margin-top: 0; }
+
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; }
+.kv dt { color: var(--rui-mid-slate); font-size: 14px; }
+.kv dd { margin: 0; font-weight: 600; }
+
+/* Semantic */
+.pos { color: var(--rui-teal); font-weight: 600; }
+.neg { color: var(--rui-danger); font-weight: 600; }
+.warn { color: var(--rui-warning); }
+.muted { color: var(--rui-cool-gray); }
+
+/* Pill buttons (9999px per DESIGN.md) */
+.btn {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+  padding: 14px 32px;
+  border-radius: 9999px;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 120ms ease-in-out;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--rui-dark); color: var(--rui-light); }
+.btn-danger { background: var(--rui-danger); color: var(--rui-light); }
+.btn-outline {
+  background: transparent;
+  color: var(--rui-dark);
+  border: 2px solid var(--rui-dark);
+}
+.btn-ghost {
+  background: rgba(244,244,244,0.1);
+  color: var(--rui-light);
+  border: 2px solid var(--rui-light);
+}
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+th, td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rui-border);
+  text-align: left;
+}
+th {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--rui-mid-slate);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.badge-ok      { background: rgba(0,168,126,0.15); color: var(--rui-teal); }
+.badge-halt    { background: rgba(226,59,74,0.15); color: var(--rui-danger); }
+.badge-kill    { background: var(--rui-danger); color: var(--rui-light); }
+.badge-clear   { background: var(--rui-surface); color: var(--rui-mid-slate); }
+.badge-rule    { background: rgba(73,79,223,0.15); color: var(--rui-blue); }
+.badge-llm-ok  { background: rgba(0,168,126,0.15); color: var(--rui-teal); }
+.badge-llm-no  { background: rgba(226,59,74,0.15); color: var(--rui-danger); }
+
+/* Admin confirm banner */
+.admin-warn {
+  border-radius: 12px;
+  border: 2px solid var(--rui-danger);
+  padding: 16px 20px;
+  background: rgba(226,59,74,0.05);
+  margin: 16px 0;
+}
+
+/* Preformatted (daily summary markdown) */
+.md-body { font-family: var(--font-body); line-height: 1.6; }
+.md-body pre { background: var(--rui-surface); padding: 16px; border-radius: 12px; overflow-x: auto; }

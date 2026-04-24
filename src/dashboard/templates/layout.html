@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ title or "Trading Agent" }}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<nav class="top">
+  <span class="brand">trading-agent</span>
+  <a href="/" class="{{ 'active' if nav == 'today' else '' }}">Today</a>
+  <a href="/signals" class="{{ 'active' if nav == 'signals' else '' }}">Signals</a>
+  <a href="/latency" class="{{ 'active' if nav == 'latency' else '' }}">Latency</a>
+  <a href="/daily" class="{{ 'active' if nav == 'daily' else '' }}">Daily summary</a>
+  <a href="/admin" class="{{ 'active' if nav == 'admin' else '' }}">Admin</a>
+</nav>
+<div class="container">
+  {% block content %}{% endblock %}
+</div>
+</body>
+</html>
